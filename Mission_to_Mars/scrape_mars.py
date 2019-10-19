@@ -2,113 +2,128 @@
 import pandas as pd
 from splinter import Browser
 from bs4 import BeautifulSoup
+import os
+import pymongo
+from flask_pymongo import PyMongo
+
+def init_browser():
+
+    executable_path = {"executable_path": "chromedriver"}
+    return Browser("chrome", **executable_path, headless=False)
 
 def scrape():
-    
-    #Creating a path to chrome draver.
-    executable_path = {'executable_path': 'chromedriver.exe'}
-    browser = Browser('chrome', **executable_path, headless=False)
 
-    title_news_first, parag_news_first = newsMars(browser)
-
-    results = {
-         "title": title_news_first,
-         "paragraph": parag_news_first,
-         "image_URL": mars_image(browser),
-         "weather": weather_tweet(browser),
-         "facts": mars_facts(),
-         "hemispheres": four_hemispheres(browser),
-    }
-
-    browser.quit()
-    return results
-
-def newsMars(browser):
-
-    # URL of page to be scraped
-    url = 'https://mars.nasa.gov/news/'
-    browser.visit(url)
-
+    #Creating a path to chrome driver.
+    browser = Browser('chrome', headless=False)
+    browser.visit('https://mars.nasa.gov/news/')
     html = browser.html
-    soup = BeautifulSoup(html, 'html.parser')
+    nasa_soup = BeautifulSoup(html, 'html.parser')
 
-    quotes = soup.find_all('span', class_='text')
 
     # Scrape the NASA webpage and collect the latest news, title and paragraph
     #text. Assign the text to variables that you can reference later.
+    title_news = nasa_soup.find('div', class_='content_title').text
+    parag_news = nasa_soup.find('div', class_='article_teaser_body').text
 
-    title_news_first = soup.find('div', class_='content_title').text
-    parag_news_first = soup.find('div', class_='article_teaser_body').text
-    
-    return title_news_first, parag_news_first
+    # JPL MARS SPACE IMAGES - FEATURED IMAGE
 
-def mars_image(browser):
-    
     #Visiting url for JPL Featured Space Image
     browser = Browser('chrome', headless = False)
     browser.visit('https://www.jpl.nasa.gov/spaceimages/?search=&category=Mars')
 
-    #Futured image url
-    featured_image_url = 'https://photojournal.jpl.nasa.gov/jpeg/PIA19980.jpg'
-    browser.visit(featured_image_url)
-
-    return featured_image_url
-
-def weather_tweet(browser):
+    html = browser.html
+    soup = BeautifulSoup(html, 'html.parser')
+    imag=soup.find("img", class_="thumb")["src"]
+    featured_image_url = "https://www.jpl.nasa.gov" + imag
+    
+    # MARS WEATHER
 
     #Visiting Mars weather twitter webpage
     browser = Browser('chrome', headless = False)
     browser.visit('https://twitter.com/marswxreport?lang=en')
 
     soup = BeautifulSoup(browser.html, 'html.parser')
-    soup.find(class_='tweet-text').text
+    mars_tweet = soup.find(class_='tweet-text').text
 
-    return tweet-text
+    # MARS FACTS
 
-def mars_facts():
-    
-    executable_path = {'executable_path': 'chromedriver.exe'}
-    browser = Browser('chrome', **executable_path, headless=False)
-    url = 'https://space-facts.com/mars/'
+    #Visiting the Mars facts webpage
+    browser = Browser('chrome', headless = False)
+    url = "https://space-facts.com/mars/"
     browser.visit(url)
 
     mars_facts = pd.read_html(url)
-    mars_facts[1]
     mars_profile = mars_facts[1]
     mars_profile.columns = ["Mars Planet Profile", "Features"]
-    
-    mars_profile = mars_profile = mars_facts[1].to_html()
-    mars_profile = mars_profile.replace("\n","")
-  
-    return mars_profile.to_html()
 
-def four_hemispheres(browser):
+    mars_profile.set_index("Mars Planet Profile", inplace=True)
+    html_table = mars_profile.reset_index().to_html(index=False)
+    
+    
+    # MARS HEMISPHERES
 
     #Visiting the Mars facts webpage
-    executable_path = {'executable_path': 'chromedriver.exe'}
-    browser = Browser('chrome', **executable_path, headless=False)
+    browser = Browser('chrome', headless=False)
 
-    url = 'https://astrogeology.usgs.gov/search/results?q=hemisphere+enhanced&k1=target&v1=Mars'
-    browser.visit(url)
+    hemis_urls = []
+    browser.visit('https://astrogeology.usgs.gov/search/results?q=hemisphere+enhanced&k1=target&v1=Mars')
+    CerberusEnhn = browser.find_by_text('Cerberus Hemisphere Enhanced')
+    Cerb = CerberusEnhn.click()
+    browser.url
+    hemis_urls.append(browser.url)
 
-    hemisphere1_image_url = 'https://astropedia.astrogeology.usgs.gov/download/Mars/Viking/cerberus_enhanced.tif/full.jpg'
-    browser.visit(hemisphere1_image_url)
+    browser.visit('https://astrogeology.usgs.gov/search/results?q=hemisphere+enhanced&k1=target&v1=Mars')
+    SchiaparelliEnhn = browser.find_by_text('Schiaparelli Hemisphere Enhanced')
+    Schiap = SchiaparelliEnhn.click()
+    browser.url
+    hemis_urls.append(browser.url)
 
-    hemisphere2_image_url = 'https://astropedia.astrogeology.usgs.gov/download/Mars/Viking/schiaparelli_enhanced.tif/full.jpg'
-    browser.visit(hemisphere2_image_url)
+    browser.visit('https://astrogeology.usgs.gov/search/results?q=hemisphere+enhanced&k1=target&v1=Mars')
+    SyrtisEnhn = browser.find_by_text('Syrtis Major Hemisphere Enhanced')
+    Syrtis = SyrtisEnhn.click()
+    browser.url
+    hemis_urls.append(browser.url)
 
-    hemisphere3_image_url = 'https://astropedia.astrogeology.usgs.gov/download/Mars/Viking/syrtis_major_enhanced.tif/full.jpg'
-    browser.visit(hemisphere3_image_url)
+    browser.visit('https://astrogeology.usgs.gov/search/results?q=hemisphere+enhanced&k1=target&v1=Mars')
+    VallesEnhn = browser.find_by_text('Valles Marineris Hemisphere Enhanced')
+    Valles = VallesEnhn.click()
+    browser.url
+    hemis_urls.append(browser.url)
 
-    hemisphere4_image_url = 'https://astropedia.astrogeology.usgs.gov/download/Mars/Viking/valles_marineris_enhanced.tif/full.jpg'
-    browser.visit(hemisphere4_image_url)
+    #naming and listing the hemisphere images
+
+    browser.visit(hemis_urls[0])
+    hemisurl_1 = browser.find_by_text('Sample')['href']
+
+    browser.visit(hemis_urls[1])
+    hemisurl_2 = browser.find_by_text('Sample')['href']
+
+    browser.visit(hemis_urls[2])
+    hemisurl_3 = browser.find_by_text('Sample')['href']
+
+    browser.visit(hemis_urls[3])
+    hemisurl_4 = browser.find_by_text('Sample')['href']
+
+    #common dictionary including all parsed internet data
+    common_dictionary = {
+        "Updated_title": title_news, 
+        "Updated_news": parag_news,
+        "Featured_image": featured_image_url,
+        "Weather_update": mars_tweet,
+        "Facts_Mars": html_table,
+        "Cerberus_hemisphere": hemisurl_1,
+        "Schiaparelli_hemisphere": hemisurl_2,
+        "Syrtis_hemisphere": hemisurl_3,
+        "Valler_hemisphere": hemisurl_4
+    }
 
     hemisphere_images = [
-        {"Title": "Valles Marineris Hemisphere", "img_url": "https://astropedia.astrogeology.usgs.gov/download/Mars/Viking/valles_marineris_enhanced.tif/full.jpg"},
-        {"Title": "Cerberus Hemisphere", "img_url": "https://astropedia.astrogeology.usgs.gov/download/Mars/Viking/cerberus_enhanced.tif/full.jpg"},
-        {"Title": "Schiaparelli Hemisphere", "img_url": "https://astropedia.astrogeology.usgs.gov/download/Mars/Viking/schiaparelli_enhanced.tif/full.jpg"},
-        {"Title": "Syrtis Major Hemisphere", "img_url": "https://astropedia.astrogeology.usgs.gov/download/Mars/Viking/syrtis_major_enhanced.tif/full.jpg"},
-        ]
+        {"Title": "Valles Marineris Hemisphere", "img_url": "hemisphere4_image_url"},
+        {"Title": "Cerberus Hemisphere", "img_url": "hemisphere1_image_url"},
+        {"Title": "Schiaparelli Hemisphere", "img_url": "hemisphere2_image_url"},
+        {"Title": "Syrtis Major Hemisphere", "img_url": "hemisphere3_image_url"},
+    ]
 
-     
-    return hemisphere_images
+    browser.quit()
+
+    return common_dictionary
